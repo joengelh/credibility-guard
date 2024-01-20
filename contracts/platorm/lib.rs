@@ -22,7 +22,7 @@ mod platorm {
         amount_pro: u32,
         amount_contra: u32,
         expires_at: BlockNumber,
-        text: String,
+        text: Hash,
         yes_token: AccountId,
         no_token: AccountId
     }
@@ -62,10 +62,35 @@ mod platorm {
             return self.version;
         }
 
-        /// Get owner of specific name.
         #[ink(message)]
         pub fn get_owner(&self) -> AccountId {
             return self.owner;
         }
+
+        #[ink(message)]
+        pub fn get_post_fee(&self) -> u128 {
+            return self.post_fee;
+        }
+
+        #[ink(message)]
+        pub fn get_vote_fee(&self) -> u128 {
+            return self.vote_fee;
+        }
+
+        #[ink(message)]
+        pub fn get_counter(&self) -> u32 {
+            return self.counter;
+        }
+
+        #[ink(message)]
+        pub fn get_all_proposals(&self) -> Vec::<Proposal> {
+            let mut proposal_list = Vec::<Proposal>::default();
+            for n in 0..self.counter {
+                let proposal: Proposal = self.proposal_map.get(n);
+                proposal_list.push(proposal);
+            }
+            return proposal_list;
+        }
+
     }
 }
