@@ -51,12 +51,12 @@ mod platorm {
         betting_until: Timestamp,
         voting_until: Timestamp,
         betters: Mapping<AccountId, Bet>,
-        bets_yes: u64,
-        bets_no: u64,
+        bets_yes: u128,
+        bets_no: u128,
         voters: Mapping<AccountId, Vote>,
-        vote_yes: u64,
-        vote_uncertain: u64,
-        votes_no: u64,
+        votes_yes: u128,
+        votes_uncertain: u128,
+        votes_no: u128,
         // voting threshold to determine the truth in decimal, so 0.5 means that 50% of voters have to agree
         voting_treshold: u8,
         metadata: String,
@@ -118,8 +118,10 @@ mod platorm {
                 posted_at: current_block,
                 betting_until: current_timestamp + self.betting_time,
                 voting_until: current_timestamp + self.betting_time + self.voting_time,
+                betters: Mapping::default(),
                 bets_yes: 0,
                 bets_no: 0,
+                voters: Mapping::default(),
                 votes_yes: 0,
                 votes_uncertain: 0,
                 votes_no: 0,
@@ -151,41 +153,12 @@ mod platorm {
             let transferred_amount = self.env().transferred_value();
             assert_eq!(transferred_amount, self.vote_fee + amount);
             if direction {
-                news.yes += amount;
+                news.bets_yes += amount;
             } else {
-                news.no += amount; 
+                news.bets_no += amount; 
             }
             let caller = Self::env().caller();
-            return (news.yes, news.no);
-        }
-
-        #[ink(message, payable)]
-        pub fn vote(
-            &self,
-            direction: u8,
-            amount: u128,
-            id: u128,
-        ) -> (u128, u128) {
-            // check if the id exists
-            assert!(self.counter >= id);
-            let mut news = self.news_map.get(id).unwrap_or_else(|| {
-                // Contracts can also panic - this WILL fail and rollback the
-                // transaction. Caller can still handle it and
-                // recover but there will be no additional information about the error available. 
-                // Use when you know something *unexpected* happened.
-                panic!(
-                    "broken invariant: expected entry to exist for the caller"
-                )
-            });
-            let transferred_amount = self.env().transferred_value();
-            assert_eq!(transferred_amount, self.vote_fee + amount);
-            if direction {
-                news.yes += amount;
-            } else {
-                news.no += amount; 
-            }
-            let caller = Self::env().caller();
-            return (news.yes, news.no);
+            return (news.bets_yes, news.bets_no);
         }
 
         #[ink(message)]
@@ -266,7 +239,7 @@ mod platorm {
         #[ink(message)]
         pub fn set_betting_time(
             &self,
-            betting_time: u64
+            betting_time: u64,
         ) -> u64 {
             assert_eq!(self.owner, Self::env().caller());
             self.betting_time = betting_time;

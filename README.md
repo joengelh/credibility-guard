@@ -14,6 +14,14 @@ Repository for the Aleph Zero Crtl Hackathon - Credibility Guard
 
 ## Install
 
+## Build
+
+smart contracts from their respective repos:
+
+```bash
+cargo +nightly contract build --release
+```
+
 ## Project Overview:
 
 [Unleashing DeFi Against Fake News](https://taikai.network/alephzero/hackathons/CTRL-Hack-ZK/projects/clrgwejuu026rvn01l61mow2y/idea)
