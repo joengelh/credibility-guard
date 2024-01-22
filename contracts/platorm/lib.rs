@@ -16,19 +16,28 @@ mod platorm {
         feature = "std",
         derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout)
     )]
-
     pub struct Bet {
         amount: u128,
         // betters can bet yes or no
-        direction: Bool,
+        direction: bool,
     }
 
+    #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
+    #[cfg_attr(
+        feature = "std",
+        derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout)
+    )]
     pub struct Vote {
         amount: u128,
         // voters can vote yes, no or uncertain and can change their opinion
         direction: u8,
     }
 
+    #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
+    #[cfg_attr(
+        feature = "std",
+        derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout)
+    )]
     pub struct News {
         author: AccountId,
         // State is an Enum that can be:
@@ -37,7 +46,7 @@ mod platorm {
         // 2, meaning it was successfully voted on and approved to be true
         // 3, meaning it was successfully voted on and approved to be untrue
         // 4, meaning it was unsiccessfully voted on and the truth was not determined
-        state: u8
+        state: u8,
         posted_at: BlockNumber,
         betting_until: Timestamp,
         voting_until: Timestamp,
@@ -48,7 +57,6 @@ mod platorm {
         vote_yes: u64,
         vote_uncertain: u64,
         votes_no: u64,
-        votes: Mapping
         // voting threshold to determine the truth in decimal, so 0.5 means that 50% of voters have to agree
         voting_treshold: u8,
         metadata: String,
@@ -62,7 +70,7 @@ mod platorm {
         vote_fee: u128,
         betting_time: u64,
         voting_time: u64,
-        voting_treshold: 0.5,
+        voting_treshold: u8,
         counter: u128,
         news_map: Mapping<u128, News>,
     }
@@ -87,7 +95,7 @@ mod platorm {
                 vote_fee: _vote_fee,
                 betting_time: _betting_time,
                 voting_time: _voting_time,
-                voting_treshold: _voting_treshold
+                voting_treshold: _voting_treshold,
                 counter: 0,
                 news_map: news,
             }
@@ -96,7 +104,7 @@ mod platorm {
         #[ink(message, payable)]
         pub fn post(
             &mut self,
-            metadata: String,
+            _metadata: String,
         ) -> u128 {
             let caller = Self::env().caller();
             let current_block = Self::env().block_number();
@@ -109,14 +117,14 @@ mod platorm {
                 state: 0,
                 posted_at: current_block,
                 betting_until: current_timestamp + self.betting_time,
-                voting_until: current_timestamp + self.betting_time + self.voting_time;
+                voting_until: current_timestamp + self.betting_time + self.voting_time,
                 bets_yes: 0,
                 bets_no: 0,
                 votes_yes: 0,
                 votes_uncertain: 0,
                 votes_no: 0,
                 voting_treshold: self.voting_treshold,
-                metadata = metadata,
+                metadata: _metadata,
             };
             self.news_map.insert(self.counter, &news);
             return self.counter;
@@ -142,7 +150,7 @@ mod platorm {
             });
             let transferred_amount = self.env().transferred_value();
             assert_eq!(transferred_amount, self.vote_fee + amount);
-            if (direction) {
+            if direction {
                 news.yes += amount;
             } else {
                 news.no += amount; 
@@ -171,7 +179,7 @@ mod platorm {
             });
             let transferred_amount = self.env().transferred_value();
             assert_eq!(transferred_amount, self.vote_fee + amount);
-            if (direction) {
+            if direction {
                 news.yes += amount;
             } else {
                 news.no += amount; 
@@ -216,13 +224,13 @@ mod platorm {
         }
 
         #[ink(message)]
-        pub fn get_all_proposals(&self) -> Vec<Proposal> {
-            let mut proposal_list = Vec::<Proposal>::default();
+        pub fn get_all_proposals(&self) -> Vec<News> {
+            let mut news_list = Vec::<News>::default();
             for n in 0..self.counter {
-                let proposal: Proposal = self.proposal_map.get(n).unwrap();
-                proposal_list.push(proposal);
+                let news: News = self.news_map.get(n).unwrap();
+                news_list.push(news);
             }
-            return proposal_list;
+            return news_list;
         }
 
         #[ink(message)]
@@ -230,7 +238,7 @@ mod platorm {
             &self,
             address: AccountId
         ) -> AccountId {
-            assert_eq(self.owner, Self::env().caller());
+            assert_eq!(self.owner, Self::env().caller());
             self.owner = address;
             return address;
         }
@@ -240,7 +248,7 @@ mod platorm {
             &self,
             post_fee: u128
         ) -> u128 {
-            assert_eq(self.owner, Self::env().caller());
+            assert_eq!(self.owner, Self::env().caller());
             self.post_fee = post_fee;
             return post_fee;
         }
@@ -250,7 +258,7 @@ mod platorm {
             &self,
             vote_fee: u128
         ) -> u128 {
-            assert_eq(self.owner, Self::env().caller());
+            assert_eq!(self.owner, Self::env().caller());
             self.vote_fee = vote_fee;
             return vote_fee;
         }
@@ -260,17 +268,17 @@ mod platorm {
             &self,
             betting_time: u64
         ) -> u64 {
-            assert_eq(self.owner, Self::env().caller());
+            assert_eq!(self.owner, Self::env().caller());
             self.betting_time = betting_time;
             return betting_time;
         }
 
         #[ink(message)]
         pub fn set_voting_time(
-            &self
-            voting_time: u64
+            &self,
+            voting_time: u64,
         ) -> u64 {
-            assert_eq(self.owner, Self::env().caller());
+            assert_eq!(self.owner, Self::env().caller());
             self.voting_time = voting_time;
             return self.voting_time;
         }
@@ -278,9 +286,9 @@ mod platorm {
         #[ink(message)]
         pub fn set_voting_treshold(
             &self,
-            voting_treshold: u8
+            voting_treshold: u8,
         ) -> u8 {
-            assert_eq(self.owner, Self::env().caller());
+            assert_eq!(self.owner, Self::env().caller());
             self.voting_treshold = voting_treshold;
             return self.voting_treshold;
         }
