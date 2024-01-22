@@ -1,12 +1,12 @@
 #![cfg_attr(not(feature = "std"), no_std, no_main)]
 
 #[ink::contract]
-mod mytoken {
+mod cgtoken {
     use ink::storage::Mapping;
 
     #[ink(storage)]
     #[derive(Default)]
-    pub struct Mytoken {
+    pub struct CgToken {
         total_supply: Balance,
         balances: Mapping<AccountId, Balance>,
     }
@@ -17,7 +17,7 @@ mod mytoken {
         InsufficientBalance,
     }
 
-    impl Mytoken {
+    impl CgToken {
         #[ink(constructor)]
         pub fn new(total_supply: Balance) -> Self {
             let mut balances = Mapping::default();
@@ -60,28 +60,28 @@ mod mytoken {
 
         #[ink::test]
         fn total_supply_works() {
-            let mytoken = Mytoken::new(100);
-            assert_eq!(mytoken.total_supply(), 100);
+            let cgtoken = CgToken::new(100);
+            assert_eq!(cgtoken.total_supply(), 100);
         }
 
         #[ink::test]
         fn balance_of_works() {
-            let mytoken = Mytoken::new(100);
+            let cgtoken = CgToken::new(100);
             let accounts =
                 ink::env::test::default_accounts::<ink::env::DefaultEnvironment>();
-            assert_eq!(mytoken.balance_of(accounts.alice), 100);
-            assert_eq!(mytoken.balance_of(accounts.bob), 0);
+            assert_eq!(cgtoken.balance_of(accounts.alice), 100);
+            assert_eq!(cgtoken.balance_of(accounts.bob), 0);
         }
 
         #[ink::test]
         fn transfer_works() {
-            let mut mytoken = Mytoken::new(100);
+            let mut cgtoken = CgToken::new(100);
             let accounts =
                 ink::env::test::default_accounts::<ink::env::DefaultEnvironment>();
 
-            assert_eq!(mytoken.balance_of(accounts.bob), 0);
-            assert_eq!(mytoken.transfer(accounts.bob, 10), Ok(()));
-            assert_eq!(mytoken.balance_of(accounts.bob), 10);
+            assert_eq!(cgtoken.balance_of(accounts.bob), 0);
+            assert_eq!(cgtoken.transfer(accounts.bob, 10), Ok(()));
+            assert_eq!(cgtoken.balance_of(accounts.bob), 10);
         }
     }
 }

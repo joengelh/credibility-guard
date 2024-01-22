@@ -2,6 +2,16 @@
 
 Repository for the Aleph Zero Crtl Hackathon - Credibility Guard
 
+## Todo
+
+- create governance token and implement it
+- decide how the platform keeps track and repays voters
+- implement tracking and repaying
+
+## Deployments on Testnet
+
+- Token; Address: 5HmWheXkh97NZJvGpcJUTNnRM7DoDc3pvyzjQpiuZbMPvkNr
+
 ## Install
 
 ## Project Overview:
