@@ -16,23 +16,37 @@ mod platorm {
         feature = "std",
         derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout)
     )]
+
     pub struct News {
         author: AccountId,
+        // State is an Enum that can be:
+        // 0, meaning it is in the betting phase,
+        // 1, meaning it is in the voting phase,
+        // 2, meaning it was successfully voted on and approved to be true
+        // 3, meaning it was successfully voted on and approved to be untrue
+        // 4, meaning it was unsiccessfully voted on and the truth was not determined
+        state: u8
         posted_at: BlockNumber,
-        expires_at: BlockNumber,
-        yes: Balance,
-        no: Balance,
-        text: String,
+        betting_until: Timestamp,
+        bets_yes: u64,
+        bets_no: u64,
+        voting_untl: Timestamp,
+        vote_yes: u64,
+        votes_no: u64
+        // voting threshold to determine the truth in decimal
+        voting_treshold: 0.5
+        metadata: String,
     }
 
     #[ink(storage)]
-    pub struct CredebilityGuard{
+    pub struct CredebilityGuard {
         version: u8,
         owner: AccountId,
         post_fee: u128,
         vote_fee: u128,
+        betting_time: u64,
+        voting_time: u64,
         counter: u128,
-        expires_after: u32,
         news_map: Mapping<u128, News>,
     }
 
