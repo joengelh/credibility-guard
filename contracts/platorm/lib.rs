@@ -30,7 +30,7 @@ mod platorm {
     pub struct Vote {
         amount: u128,
         // voters can vote yes, no or uncertain and can change their opinion
-        direction: u8,
+        cast: u8,
     }
 
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
@@ -65,13 +65,14 @@ mod platorm {
         version: u8,
         owner: AccountId,
         post_fee: u128,
-        vote_fee: u128,
+        bet_fee: u128,
         betting_time: u64,
         voting_time: u64,
         voting_treshold: u8,
         bettors: Mapping<(u128, AccountId), Bet>,
         voters: Mapping<(u128, AccountId), Vote>,
         counter: u128,
+        fees_collected: u128,
         news: Mapping<u128, News>,
     }
 
@@ -81,7 +82,7 @@ mod platorm {
         pub fn new(
             _version: u8,
             _post_fee: u128, 
-            _vote_fee: u128,
+            _bet_fee: u128,
             _betting_time: u64,
             _voting_time: u64,
             _voting_treshold: u8,
@@ -94,13 +95,14 @@ mod platorm {
                 version: _version,
                 owner: caller,
                 post_fee: _post_fee,
-                vote_fee: _vote_fee,
+                bet_fee: _bet_fee,
                 betting_time: _betting_time,
                 voting_time: _voting_time,
                 voting_treshold: _voting_treshold,
                 counter: 0,
                 bettors: bettors,
                 voters: voters,
+                fees_collected: 0,
                 news: news,
             }
         }
@@ -115,6 +117,7 @@ mod platorm {
             let current_timestamp = Self::env().block_timestamp();
             let transferred_amount = self.env().transferred_value();
             assert_eq!(transferred_amount, self.post_fee);
+            self.fees_collected += self.post_fee;
             self.counter += 1;
             let news = News {
                 author: caller,
@@ -154,11 +157,53 @@ mod platorm {
                 )
             });
             let transferred_amount = self.env().transferred_value();
-            assert_eq!(transferred_amount, self.vote_fee + amount);
+            assert_eq!(transferred_amount, self.bet_fee + amount);
+            self.fees_collected += self.bet_fee;
             if direction {
                 news.bets_yes += amount;
             } else {
                 news.bets_no += amount; 
+            }
+            let bet = Bet {
+                amount: amount,
+                // bettors can bet yes or no
+                direction: direction,
+            };
+            self.news.insert(id, &news);
+            self.bettors.insert((id, caller), &bet);
+            return (news.bets_yes, news.bets_no);
+        }
+
+        
+        #[ink(message)]
+        pub fn vote(
+            &mut self,
+            cast: u8,
+            id: u128,
+        ) -> (u128, u128) {
+            // check if the id exists
+            assert!(self.counter >= id);
+            let caller = Self::env().caller();
+            let mut news = self.news.get(id).unwrap_or_else(|| {
+                // Contracts can also panic - this WILL fail and rollback the
+                // transaction. Caller can still handle it and
+                // recover but there will be no additional information about the error available. 
+                // Use when you know something *unexpected* happened.
+                panic!(
+                    "broken invariant: expected entry to exist for the caller"
+                )
+            });
+            if (cast == 0) {
+                news.votes_yes += 1;
+            } else if (cast == 1) {
+                news.bets_no += amount; 
+            } else if (cast == 2){
+
+            }
+            else {
+                panic!(
+                    "illegal cast"
+                )
             }
             let bet = Bet {
                 amount: amount,
@@ -186,8 +231,8 @@ mod platorm {
         }
 
         #[ink(message)]
-        pub fn get_vote_fee(&self) -> u128 {
-            return self.vote_fee;
+        pub fn get_bet_fee(&self) -> u128 {
+            return self.bet_fee;
         }
 
         #[ink(message)]
@@ -236,13 +281,13 @@ mod platorm {
         }
 
         #[ink(message)]
-        pub fn set_vote_fee(
+        pub fn set_bet_fee(
             &mut self,
-            vote_fee: u128
+            bet_fee: u128
         ) -> u128 {
             assert_eq!(self.owner, Self::env().caller());
-            self.vote_fee = vote_fee;
-            return vote_fee;
+            self.bet_fee = bet_fee;
+            return bet_fee;
         }
 
         #[ink(message)]
