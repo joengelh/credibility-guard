@@ -17,7 +17,8 @@ mod platorm {
         derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout)
     )]
     pub struct Bet {
-        amount: u128,
+        amount_payed: u128,
+        amount_promised: u128,
         // bettors can bet yes or no
         direction: bool,
     }
@@ -28,7 +29,7 @@ mod platorm {
         derive(scale_info::TypeInfo, ink::storage::traits::StorageLayout)
     )]
     pub struct Vote {
-        amount: u128,
+        amount_staked: u128,
         // voters can vote yes, no or uncertain and can change their opinion
         cast: u8,
     }
@@ -40,6 +41,7 @@ mod platorm {
     )]
     pub struct News {
         author: AccountId,
+        pool: u128,
         // State is an Enum that can be:
         // 0, meaning it is in the betting phase,
         // 1, meaning it is in the voting phase,
@@ -50,8 +52,10 @@ mod platorm {
         posted_at: BlockNumber,
         betting_until: Timestamp,
         voting_until: Timestamp,
-        bets_yes: u128,
-        bets_no: u128,
+        bets_yes_counter: u128,
+        bets_no_counter: u128,
+        bets_yes_payout: u128,
+        bets_no_payout: u128,
         votes_yes: u128,
         votes_uncertain: u128,
         votes_no: u128,
@@ -125,8 +129,8 @@ mod platorm {
                 posted_at: current_block,
                 betting_until: current_timestamp + self.betting_time,
                 voting_until: current_timestamp + self.betting_time + self.voting_time,
-                bets_yes: 0,
-                bets_no: 0,
+                bets_yes_counter: 0,
+                bets_no_counter: 0,
                 votes_yes: 0,
                 votes_uncertain: 0,
                 votes_no: 0,
@@ -160,9 +164,9 @@ mod platorm {
             assert_eq!(transferred_amount, self.bet_fee + amount);
             self.fees_collected += self.bet_fee;
             if direction {
-                news.bets_yes += amount;
+                news.bets_yes_counter += amount;
             } else {
-                news.bets_no += amount; 
+                news.bets_no_counter += amount; 
             }
             let bet = Bet {
                 amount: amount,
@@ -171,7 +175,7 @@ mod platorm {
             };
             self.news.insert(id, &news);
             self.bettors.insert((id, caller), &bet);
-            return (news.bets_yes, news.bets_no);
+            return (news.bets_yes_counter, news.bets_no_counter);
         }
 
         
@@ -196,7 +200,7 @@ mod platorm {
             if (cast == 0) {
                 news.votes_yes += 1;
             } else if (cast == 1) {
-                news.bets_no += amount; 
+                news.bets_no_counter += amount; 
             } else if (cast == 2){
 
             }
@@ -212,7 +216,7 @@ mod platorm {
             };
             self.news.insert(id, &news);
             self.bettors.insert((id, caller), &bet);
-            return (news.bets_yes, news.bets_no);
+            return (news.bets_yes_counter, news.bets_no_counter);
         }
 
         #[ink(message)]
@@ -320,4 +324,7 @@ mod platorm {
             return self.voting_treshold;
         }
     }
+
+    fn calculate_payout(&self) -> u32, u32 {
+        
 }
