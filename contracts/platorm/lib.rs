@@ -18,7 +18,7 @@ mod platorm {
     )]
     pub struct Bet {
         amount: u128,
-        // betters can bet yes or no
+        // bettors can bet yes or no
         direction: bool,
     }
 
@@ -50,10 +50,8 @@ mod platorm {
         posted_at: BlockNumber,
         betting_until: Timestamp,
         voting_until: Timestamp,
-        betters: Mapping<AccountId, Bet>,
         bets_yes: u128,
         bets_no: u128,
-        voters: Mapping<AccountId, Vote>,
         votes_yes: u128,
         votes_uncertain: u128,
         votes_no: u128,
@@ -71,8 +69,10 @@ mod platorm {
         betting_time: u64,
         voting_time: u64,
         voting_treshold: u8,
+        bettors: Mapping<(u128, AccountId), Bet>,
+        voters: Mapping<(u128, AccountId), Vote>,
         counter: u128,
-        news_map: Mapping<u128, News>,
+        news: Mapping<u128, News>,
     }
 
     impl CredebilityGuard {
@@ -88,6 +88,8 @@ mod platorm {
         ) -> Self {
             let caller = Self::env().caller();
             let news = Mapping::default();
+            let bettors = Mapping::default();
+            let voters = Mapping::default();
             Self {
                 version: _version,
                 owner: caller,
@@ -97,7 +99,9 @@ mod platorm {
                 voting_time: _voting_time,
                 voting_treshold: _voting_treshold,
                 counter: 0,
-                news_map: news,
+                bettors: bettors,
+                voters: voters,
+                news: news,
             }
         }
 
@@ -118,30 +122,29 @@ mod platorm {
                 posted_at: current_block,
                 betting_until: current_timestamp + self.betting_time,
                 voting_until: current_timestamp + self.betting_time + self.voting_time,
-                betters: Mapping::default(),
                 bets_yes: 0,
                 bets_no: 0,
-                voters: Mapping::default(),
                 votes_yes: 0,
                 votes_uncertain: 0,
                 votes_no: 0,
                 voting_treshold: self.voting_treshold,
                 metadata: _metadata,
             };
-            self.news_map.insert(self.counter, &news);
+            self.news.insert(self.counter, &news);
             return self.counter;
         }
 
         #[ink(message, payable)]
         pub fn bet(
-            &self,
+            &mut self,
             direction: bool,
             amount: u128,
             id: u128,
         ) -> (u128, u128) {
             // check if the id exists
             assert!(self.counter >= id);
-            let mut news = self.news_map.get(id).unwrap_or_else(|| {
+            let caller = Self::env().caller();
+            let mut news = self.news.get(id).unwrap_or_else(|| {
                 // Contracts can also panic - this WILL fail and rollback the
                 // transaction. Caller can still handle it and
                 // recover but there will be no additional information about the error available. 
@@ -157,7 +160,13 @@ mod platorm {
             } else {
                 news.bets_no += amount; 
             }
-            let caller = Self::env().caller();
+            let bet = Bet {
+                amount: amount,
+                // bettors can bet yes or no
+                direction: direction,
+            };
+            self.news.insert(id, &news);
+            self.bettors.insert((id, caller), &bet);
             return (news.bets_yes, news.bets_no);
         }
 
@@ -200,7 +209,7 @@ mod platorm {
         pub fn get_all_proposals(&self) -> Vec<News> {
             let mut news_list = Vec::<News>::default();
             for n in 0..self.counter {
-                let news: News = self.news_map.get(n).unwrap();
+                let news: News = self.news.get(n).unwrap();
                 news_list.push(news);
             }
             return news_list;
@@ -208,7 +217,7 @@ mod platorm {
 
         #[ink(message)]
         pub fn set_owner(
-            &self,
+            & mut self,
             address: AccountId
         ) -> AccountId {
             assert_eq!(self.owner, Self::env().caller());
@@ -218,7 +227,7 @@ mod platorm {
 
         #[ink(message)]
         pub fn set_post_fee(
-            &self,
+            &mut self,
             post_fee: u128
         ) -> u128 {
             assert_eq!(self.owner, Self::env().caller());
@@ -228,7 +237,7 @@ mod platorm {
 
         #[ink(message)]
         pub fn set_vote_fee(
-            &self,
+            &mut self,
             vote_fee: u128
         ) -> u128 {
             assert_eq!(self.owner, Self::env().caller());
@@ -238,7 +247,7 @@ mod platorm {
 
         #[ink(message)]
         pub fn set_betting_time(
-            &self,
+            &mut self,
             betting_time: u64,
         ) -> u64 {
             assert_eq!(self.owner, Self::env().caller());
@@ -248,7 +257,7 @@ mod platorm {
 
         #[ink(message)]
         pub fn set_voting_time(
-            &self,
+            &mut self,
             voting_time: u64,
         ) -> u64 {
             assert_eq!(self.owner, Self::env().caller());
@@ -258,7 +267,7 @@ mod platorm {
 
         #[ink(message)]
         pub fn set_voting_treshold(
-            &self,
+            &mut self,
             voting_treshold: u8,
         ) -> u8 {
             assert_eq!(self.owner, Self::env().caller());
