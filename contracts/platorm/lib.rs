@@ -52,6 +52,7 @@ mod platorm {
         posted_at: BlockNumber,
         betting_until: Timestamp,
         voting_until: Timestamp,
+        bets_pot: u128,
         bets_yes_counter: u128,
         bets_no_counter: u128,
         bets_yes_payout: u128,
@@ -326,5 +327,7 @@ mod platorm {
     }
 
     fn calculate_payout(&self) -> u32, u32 {
+        
+    }
         
 }
