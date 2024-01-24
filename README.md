@@ -47,3 +47,5 @@ On the other end, participants who cast their votes are financially motivated as
 The crucial component in this ecosystem is the token holders. These individuals hold the power to determine the accuracy of news after a 60-day period. Their financial stake is at risk, as their tokens' value is tied to the platform's overall health and accuracy. If token holders provide false information, it could lead to a decline in platform usage, diminishing the value of their tokens. This dual motivation – maintaining the platform's credibility and safeguarding their financial interests – ensures that token holders will truthfully verify the accuracy of the news.
 
 In the event that a conclusive determination cannot be made, the platform adopts a fail-safe mechanism. Funds are returned to participants, emphasizing the commitment to fairness and accuracy in the face of uncertainty.
+
+If the platform was wrong the platform looses reputation. the money left over goes to the person who asked the question.
