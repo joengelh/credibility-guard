@@ -10,6 +10,7 @@ mod cgtoken {
         total_supply: Balance,
         balances: Mapping<AccountId, Balance>,
         staked_balances: Mapping<AccountId, Balance>,
+        staked_at: Mapping<AccountId, Timestamp>,
     }
 
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
@@ -19,6 +20,24 @@ mod cgtoken {
         AlreadyStaked,
         NotStaked,
         UnstakingPeriodNotElapsed,
+    }
+
+    #[ink(event)]
+    pub struct Staked {
+        #[ink(topic)]
+        staker: AccountId,
+        #[ink(topic)]
+        amount: Balance,
+        #[ink(topic)]
+        timestamp: Timestamp,
+    }
+
+    #[ink(event)]
+    pub struct Unstaked {
+        #[ink(topic)]
+        staker: AccountId,
+        #[ink(topic)]
+        amount: Balance,
     }
 
     impl CgToken {
@@ -31,6 +50,7 @@ mod cgtoken {
                 total_supply,
                 balances,
                 staked_balances: Mapping::default(),
+                staked_at: Mapping::default(),
             }
         }
 
@@ -46,13 +66,20 @@ mod cgtoken {
 
         #[ink(message)]
         pub fn staked_balance_of(&self, staker: AccountId) -> Balance {
-            self.staked_balances.get(staker).map_or(0, |(balance, _)| balance)
+            self.staked_balances.get(staker).unwrap_or_default()
+        }
+
+        #[ink(message)]
+        pub fn staked_at(&self, staker: AccountId) -> Timestamp {
+            self.staked_at.get(staker).unwrap_or_default()
         }
 
         #[ink(message)]
         pub fn stake(&mut self, amount: Balance) -> Result<(), Error> {
             let staker = self.env().caller();
             let balance = self.balance_of(staker);
+
+            let current_timestamp = self.env().block_timestamp();
 
             if amount > balance {
                 return Err(Error::InsufficientBalance);
@@ -65,7 +92,8 @@ mod cgtoken {
             let timestamp = self.env().block_timestamp();
 
             self.balances.insert(staker, &(balance - amount));
-            self.staked_balances.insert(staker, &(amount, timestamp));
+            self.staked_balances.insert(staker, &amount);
+            self.staked_at.insert(staker, &current_timestamp);
 
             self.env().emit_event(Staked {
                 staker,
@@ -79,22 +107,23 @@ mod cgtoken {
         #[ink(message)]
         pub fn unstake(&mut self, amount: Balance) -> Result<(), Error> {
             let staker = self.env().caller();
-            let (staked_balance, timestamp) = self.staked_balances.get(staker).ok_or(Error::NotStaked)?;
+            let staked_balance = self.staked_balances.get(staker).unwrap_or_default();
+            let staked_at = self.staked_at.get(staker).unwrap_or_default();
 
-            if amount > *staked_balance {
+            if amount > staked_balance {
                 return Err(Error::InsufficientBalance);
             }
 
             let current_timestamp = self.env().block_timestamp();
             let unstaking_period = 14 * 24 * 60 * 60; // 14 days in seconds
 
-            if current_timestamp < timestamp + unstaking_period {
+            if current_timestamp < staked_at + unstaking_period {
                 return Err(Error::UnstakingPeriodNotElapsed);
             }
 
             let balance = self.balance_of(staker);
             self.balances.insert(staker, &(balance + amount));
-            self.staked_balances.insert(staker, &(staked_balance - amount, timestamp));
+            self.staked_balances.insert(staker, &(staked_balance - amount));
 
             self.env().emit_event(Unstaked { staker, amount });
 
