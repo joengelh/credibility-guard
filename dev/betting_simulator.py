@@ -10,7 +10,6 @@ for i in range(0, 100):
     bet_size = random.randint(1, 100)
     bet_weight = bet_size / pot
     print(bet_size)
-    pot += bet_size
     offered_premium_yes = (((pot - promised_premium_yes)
                             ) * bet_weight * 0.95) + bet_size
     offered_premium_no = (((pot - promised_premium_no))
@@ -21,6 +20,7 @@ for i in range(0, 100):
         promised_premium_yes += offered_premium_yes
     else:
         promised_premium_no += offered_premium_no
+    pot += bet_size
 print(promised_premium_yes)
 print(promised_premium_no)
 print(pot)

@@ -52,11 +52,10 @@ mod platorm {
         posted_at: BlockNumber,
         betting_until: Timestamp,
         voting_until: Timestamp,
-        bets_pot: u128,
         bets_yes_counter: u128,
         bets_no_counter: u128,
-        bets_yes_payout: u128,
-        bets_no_payout: u128,
+        bets_yes_promised: u128,
+        bets_no_promised: u128,
         votes_yes: u128,
         votes_uncertain: u128,
         votes_no: u128,
@@ -170,12 +169,15 @@ mod platorm {
                 news.bets_no_counter += amount; 
             }
             let bet = Bet {
-                amount: amount,
+                amount_payed: amount,
                 // bettors can bet yes or no
                 direction: direction,
             };
             self.news.insert(id, &news);
             self.bettors.insert((id, caller), &bet);
+            news.bets_no_promised += offered_premium;
+        self.news.insert(news);
+        self.bettors.insert(id, (amount, offered_premium, direction));
             return (news.bets_yes_counter, news.bets_no_counter);
         }
 
@@ -210,10 +212,9 @@ mod platorm {
                     "illegal cast"
                 )
             }
-            let bet = Bet {
-                amount: amount,
-                // bettors can bet yes or no
-                direction: direction,
+            let vote = Vote {
+                amount_staked: amount,
+                cast: cast,
             };
             self.news.insert(id, &news);
             self.bettors.insert((id, caller), &bet);
@@ -326,8 +327,31 @@ mod platorm {
         }
     }
 
-    fn calculate_payout(&self) -> u32, u32 {
-        
+    // This function returns the money that will be won by the participant
+    fn calculate_payout(
+        &self,
+        caller: AccountId,
+        amount: u128,
+        choice: bool,
+        id: u128,
+    ) -> u128 {
+        let mut news = self.news.get(id).unwrap_or_else(|| {
+            // Contracts can also panic - this WILL fail and rollback the
+            // transaction. Caller can still handle it and
+            // recover but there will be no additional information about the error available. 
+            // Use when you know something *unexpected* happened.
+            panic!(
+                "broken invariant: expected entry to exist for the caller"
+            )}
+        );
+        let bet_weight = amount / news.pool;
+        news.pool += amount;
+        if (choice) {
+            let offered_premium = (((news.pool - news.bets_yes_promised) * bet_weight * 0.95) + bet_size);
+        } else {
+            let offered_premium = (((news.pool - news.bets_no_promised) * bet_weight * 0.95) + bet_size);
+        }
+        return offered_premium;
     }
         
 }
