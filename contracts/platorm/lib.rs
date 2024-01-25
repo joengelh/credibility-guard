@@ -77,6 +77,7 @@ mod platorm {
         voters: Mapping<(u128, AccountId), Vote>,
         counter: u128,
         fees_collected: u128,
+        initial_pool: u128,
         news: Mapping<u128, News>,
     }
 
@@ -89,12 +90,10 @@ mod platorm {
             _bet_fee: u128,
             _betting_time: u64,
             _voting_time: u64,
+            _inital_pool: u128,
             _voting_treshold: u8,
         ) -> Self {
             let caller = Self::env().caller();
-            let news = Mapping::default();
-            let bettors = Mapping::default();
-            let voters = Mapping::default();
             Self {
                 version: _version,
                 owner: caller,
@@ -104,10 +103,11 @@ mod platorm {
                 voting_time: _voting_time,
                 voting_treshold: _voting_treshold,
                 counter: 0,
-                bettors: bettors,
-                voters: voters,
+                bettors: Mapping::default(),
+                voters: Mapping::default(),
                 fees_collected: 0,
-                news: news,
+                initial_pool: _inital_pool,
+                news: Mapping::default(),
             }
         }
 
@@ -120,17 +120,20 @@ mod platorm {
             let current_block = Self::env().block_number();
             let current_timestamp = Self::env().block_timestamp();
             let transferred_amount = self.env().transferred_value();
-            assert_eq!(transferred_amount, self.post_fee);
+            assert_eq!(transferred_amount, self.post_fee + self.initial_pool);
             self.fees_collected += self.post_fee;
             self.counter += 1;
             let news = News {
                 author: caller,
+                pool: self.initial_pool,
                 state: 0,
                 posted_at: current_block,
                 betting_until: current_timestamp + self.betting_time,
                 voting_until: current_timestamp + self.betting_time + self.voting_time,
                 bets_yes_counter: 0,
                 bets_no_counter: 0,
+                bets_yes_promised: 0,
+                bets_no_promised: 0,
                 votes_yes: 0,
                 votes_uncertain: 0,
                 votes_no: 0,
@@ -145,9 +148,8 @@ mod platorm {
         pub fn bet(
             &mut self,
             direction: bool,
-            amount: u128,
             id: u128,
-        ) -> (u128, u128) {
+        ) -> u128 {
             // check if the id exists
             assert!(self.counter >= id);
             let caller = Self::env().caller();
@@ -159,29 +161,29 @@ mod platorm {
                 panic!(
                     "broken invariant: expected entry to exist for the caller"
                 )
-            });
-            let transferred_amount = self.env().transferred_value();
-            assert_eq!(transferred_amount, self.bet_fee + amount);
-            self.fees_collected += self.bet_fee;
-            if direction {
-                news.bets_yes_counter += amount;
-            } else {
-                news.bets_no_counter += amount; 
-            }
-            let bet = Bet {
-                amount_payed: amount,
-                // bettors can bet yes or no
-                direction: direction,
-            };
-            self.news.insert(id, &news);
-            self.bettors.insert((id, caller), &bet);
-            news.bets_no_promised += offered_premium;
-        self.news.insert(news);
-        self.bettors.insert(id, (amount, offered_premium, direction));
-            return (news.bets_yes_counter, news.bets_no_counter);
+        });
+        let transferred_amount = self.env().transferred_value();
+        assert!(transferred_amount > self.bet_fee);
+        self.fees_collected += self.bet_fee;
+        let amount = transferred_amount - self.bet_fee;
+        let premium = calculate_premium(amount, direction, news.pool, news.bets_yes_promised, news.bets_no_promised);
+        if direction {
+            news.bets_yes_counter += 1;
+            news.bets_yes_promised += premium;
+        } else {
+            news.bets_no_counter += 1;
+            news.bets_no_promised += premium;
+        }
+        let bet = Bet {
+            amount_payed: amount,
+            amount_promised: premium,
+            direction: direction,
+        };
+        self.news.insert(id, &news);
+        self.bettors.insert((id, caller), &bet);
+        return amount;
         }
 
-        
         #[ink(message)]
         pub fn vote(
             &mut self,
@@ -200,11 +202,11 @@ mod platorm {
                     "broken invariant: expected entry to exist for the caller"
                 )
             });
-            if (cast == 0) {
+            if cast == 0 {
                 news.votes_yes += 1;
-            } else if (cast == 1) {
-                news.bets_no_counter += amount; 
-            } else if (cast == 2){
+            } else if cast == 1 {
+                news.votes_no += 1; 
+            } else if cast == 2 {
 
             }
             else {
@@ -212,13 +214,38 @@ mod platorm {
                     "illegal cast"
                 )
             }
+            // GET STAKED TOKENS!
+            let amount = 1;
             let vote = Vote {
                 amount_staked: amount,
                 cast: cast,
             };
             self.news.insert(id, &news);
-            self.bettors.insert((id, caller), &bet);
-            return (news.bets_yes_counter, news.bets_no_counter);
+            self.voters.insert((id, caller), &vote);
+            return (news.votes_no, news.votes_yes);
+        }
+
+
+        #[ink(message)]
+        pub fn claim(
+            &mut self,
+            id: u128,
+        ) -> u128 {
+            // check if the id exists
+            assert!(self.counter >= id);
+            // check if voting ended
+            let caller = Self::env().caller();
+            let current_timestamp = Self::env().block_timestamp();
+            let mut news = self.news.get(id).unwrap_or_else(|| {
+                // Contracts can also panic - this WILL fail and rollback the
+                // transaction. Caller can still handle it and
+                // recover but there will be no additional information about the error available. 
+                // Use when you know something *unexpected* happened.
+                panic!(
+                    "broken invariant: expected entry to exist for the caller"
+                )
+            });
+            assert!(news.voting_time > current_timestamp);
         }
 
         #[ink(message)]
@@ -328,30 +355,33 @@ mod platorm {
     }
 
     // This function returns the money that will be won by the participant
-    fn calculate_payout(
-        &self,
-        caller: AccountId,
+    fn calculate_premium(
         amount: u128,
         choice: bool,
-        id: u128,
+        pool: u128,
+        bets_yes_promised: u128,
+        bets_no_promised: u128,
     ) -> u128 {
-        let mut news = self.news.get(id).unwrap_or_else(|| {
-            // Contracts can also panic - this WILL fail and rollback the
-            // transaction. Caller can still handle it and
-            // recover but there will be no additional information about the error available. 
-            // Use when you know something *unexpected* happened.
-            panic!(
-                "broken invariant: expected entry to exist for the caller"
-            )}
-        );
-        let bet_weight = amount / news.pool;
-        news.pool += amount;
-        if (choice) {
-            let offered_premium = (((news.pool - news.bets_yes_promised) * bet_weight * 0.95) + bet_size);
+        let bet_weight = amount / pool;
+        let adjusted_weight = percent_of_value(bet_weight, 95);
+        let mut offered_premium = 0;
+        if choice {
+            offered_premium = ((pool - bets_yes_promised) * adjusted_weight) + amount;
         } else {
-            let offered_premium = (((news.pool - news.bets_no_promised) * bet_weight * 0.95) + bet_size);
+            offered_premium = ((pool - bets_no_promised) * adjusted_weight) + amount;
         }
         return offered_premium;
     }
-        
+
+    // This function calculates a percentage of a value
+    fn percent_of_value(value: u128, percent: u128) -> u128 {
+        // Convert u128 to f64 for the calculation
+        let value_as_f64 = value as f64;
+
+        // Calculate the reduced value
+        let reduced_value = (value_as_f64 * percent as f64 / 100.0) as u128;
+
+        // Return the reduced value
+        reduced_value
+    }
 }
