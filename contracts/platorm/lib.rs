@@ -49,7 +49,6 @@ mod platorm {
         // 2, meaning it was successfully voted on and approved to be true
         // 3, meaning it was successfully voted on and approved to be untrue
         // 4, meaning it was unsiccessfully voted on and the truth was not determined
-        state: u8,
         posted_at: BlockNumber,
         betting_until: Timestamp,
         voting_until: Timestamp,
@@ -127,7 +126,6 @@ mod platorm {
             let news = News {
                 author: caller,
                 pool: self.initial_pool,
-                state: 0,
                 posted_at: current_block,
                 betting_until: current_timestamp + self.betting_time,
                 voting_until: current_timestamp + self.betting_time + self.voting_time,
@@ -257,8 +255,20 @@ mod platorm {
                 )
             });
             assert_eq!(bettor.claimed, false);
-            assert!(news.voting_until > current_timestamp);
-            return bettor.amount_promised;
+            assert_eq!(news.voting_until < current_timestamp);
+            if news.votes_uncertain > news.votes_yes && news.votes_uncertain > news.votes_no == 4 && {
+                self.env().transfer(caller, bettor.amount_payed);
+                return bettor.amount_promised;
+            } else if news.votes_yes > news.votes_no == 2 && bettor.direction == true {
+                self.env().transfer(caller, bettor.amount_payed);
+                return bettor.amount_promised;
+            } else if news.votes_yes < news.votes_no && bettor.direction == false {
+                self.env().transfer(caller, bettor.amount_payed);
+                return bettor.amount_promised;
+            } else {
+                self.env().transfer(caller, bettor.amount_payed);
+                return bettor.amount_promised;
+            }
         }
 
         #[ink(message)]
