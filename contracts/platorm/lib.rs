@@ -19,6 +19,7 @@ mod platorm {
     pub struct Bet {
         amount_payed: u128,
         amount_promised: u128,
+        claimed: bool,
         // bettors can bet yes or no
         direction: bool,
     }
@@ -61,7 +62,7 @@ mod platorm {
         votes_no: u128,
         // voting threshold to determine the truth in decimal, so 0.5 means that 50% of voters have to agree
         voting_treshold: u8,
-        metadata: String,
+        metadata: Hash,
     }
 
     #[ink(storage)]
@@ -114,7 +115,7 @@ mod platorm {
         #[ink(message, payable)]
         pub fn post(
             &mut self,
-            _metadata: String,
+            _metadata: Hash,
         ) -> u128 {
             let caller = Self::env().caller();
             let current_block = Self::env().block_number();
@@ -177,6 +178,7 @@ mod platorm {
         let bet = Bet {
             amount_payed: amount,
             amount_promised: premium,
+            claimed: false,
             direction: direction,
         };
         self.news.insert(id, &news);
@@ -245,7 +247,18 @@ mod platorm {
                     "broken invariant: expected entry to exist for the caller"
                 )
             });
-            assert!(news.voting_time > current_timestamp);
+            let mut bettor = self.bettors.get((id, caller)).unwrap_or_else(|| {
+                // Contracts can also panic - this WILL fail and rollback the
+                // transaction. Caller can still handle it and
+                // recover but there will be no additional information about the error available. 
+                // Use when you know something *unexpected* happened.
+                panic!(
+                    "broken invariant: expected entry to exist for the caller"
+                )
+            });
+            assert_eq!(bettor.claimed, false);
+            assert!(news.voting_until > current_timestamp);
+            return bettor.amount_promised;
         }
 
         #[ink(message)]

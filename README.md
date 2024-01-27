@@ -14,6 +14,8 @@ Repository for the Aleph Zero Crtl Hackathon - Credibility Guard
 
 ## Install
 
+cargo install ink-wrapper --locked --force --version 0.4.1
+
 ## Build
 
 smart contracts from their respective repos:
