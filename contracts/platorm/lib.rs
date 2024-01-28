@@ -10,7 +10,9 @@ mod platorm {
         storage::Mapping,
         ToAccountId,
     };
-    
+
+    use cgtoken::CgTokenRef;
+
     #[derive(Debug, PartialEq, Eq, scale::Encode, scale::Decode)]
     #[cfg_attr(
         feature = "std",
@@ -79,6 +81,7 @@ mod platorm {
         fees_collected: u128,
         initial_pool: u128,
         news: Mapping<u128, News>,
+        cgtoken: CgTokenRef,
     }
 
     impl CredebilityGuard {
@@ -92,7 +95,13 @@ mod platorm {
             _voting_time: u64,
             _inital_pool: u128,
             _voting_treshold: u8,
+            _cgtoken_code_hash: Hash,
         ) -> Self {
+            let cgtoken = CgTokenRef::new(true)
+                .code_hash(_cgtoken_code_hash)
+                .endowment(0)
+                .salt_bytes([0xDE, 0xAD, 0xBE, 0xEF])
+                .instantiate();
             let caller = Self::env().caller();
             Self {
                 version: _version,
@@ -108,6 +117,7 @@ mod platorm {
                 fees_collected: 0,
                 initial_pool: _inital_pool,
                 news: Mapping::default(),
+                cgtoken: cgtoken,
             }
         }
 
@@ -140,6 +150,13 @@ mod platorm {
                 metadata: _metadata,
             };
             self.news.insert(self.counter, &news);
+            let bettor = Bet {
+                direction: true,
+                amount_promised: 0,
+                claimed: false,
+                amount_payed: self.initial_pool,
+            };
+            self.bettors.insert((self.counter, caller), &bettor);
             return self.counter;
         }
 
@@ -189,7 +206,7 @@ mod platorm {
             &mut self,
             cast: u8,
             id: u128,
-        ) -> (u128, u128) {
+        ) -> u128 {
             // check if the id exists
             assert!(self.counter >= id);
             let caller = Self::env().caller();
@@ -214,15 +231,14 @@ mod platorm {
                     "illegal cast"
                 )
             }
-            // GET STAKED TOKENS!
-            let amount = 1;
+            let amount_staked = self.cgtoken.staked_balance_of(caller);
             let vote = Vote {
-                amount_staked: amount,
+                amount_staked: amount_staked,
                 cast: cast,
             };
             self.news.insert(id, &news);
             self.voters.insert((id, caller), &vote);
-            return (news.votes_no, news.votes_yes);
+            return amount_staked;
         }
 
 
@@ -255,11 +271,11 @@ mod platorm {
                 )
             });
             assert_eq!(bettor.claimed, false);
-            assert_eq!(news.voting_until < current_timestamp);
-            if news.votes_uncertain > news.votes_yes && news.votes_uncertain > news.votes_no == 4 && {
+            assert!(news.voting_until < current_timestamp);
+            if news.votes_uncertain > news.votes_yes && news.votes_uncertain > news.votes_no {
                 self.env().transfer(caller, bettor.amount_payed);
                 return bettor.amount_promised;
-            } else if news.votes_yes > news.votes_no == 2 && bettor.direction == true {
+            } else if news.votes_yes > news.votes_no && bettor.direction == true {
                 self.env().transfer(caller, bettor.amount_payed);
                 return bettor.amount_promised;
             } else if news.votes_yes < news.votes_no && bettor.direction == false {
