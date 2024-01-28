@@ -4,11 +4,10 @@
 mod platorm {
 
     use ink::{
-        codegen::EmitEvent,
-        prelude::{format, string::String, vec::Vec},
-        reflect::ContractEventBase,
+        //codegen::EmitEvent,
+        //reflect::ContractEventBase,
+        prelude::vec::Vec,
         storage::Mapping,
-        ToAccountId,
     };
 
     use cgtoken::CgTokenRef;
@@ -45,13 +44,7 @@ mod platorm {
     pub struct News {
         author: AccountId,
         pool: u128,
-        // State is an Enum that can be:
-        // 0, meaning it is in the betting phase,
-        // 1, meaning it is in the voting phase,
-        // 2, meaning it was successfully voted on and approved to be true
-        // 3, meaning it was successfully voted on and approved to be untrue
-        // 4, meaning it was unsiccessfully voted on and the truth was not determined
-        posted_at: BlockNumber,
+        posted_at: Timestamp,
         betting_until: Timestamp,
         voting_until: Timestamp,
         bets_yes_counter: u128,
@@ -97,7 +90,8 @@ mod platorm {
             _voting_treshold: u8,
             _cgtoken_code_hash: Hash,
         ) -> Self {
-            let cgtoken = CgTokenRef::new(true)
+            let max_supply = 100000000;
+            let cgtoken = CgTokenRef::new(max_supply)
                 .code_hash(_cgtoken_code_hash)
                 .endowment(0)
                 .salt_bytes([0xDE, 0xAD, 0xBE, 0xEF])
@@ -127,7 +121,6 @@ mod platorm {
             _metadata: Hash,
         ) -> u128 {
             let caller = Self::env().caller();
-            let current_block = Self::env().block_number();
             let current_timestamp = Self::env().block_timestamp();
             let transferred_amount = self.env().transferred_value();
             assert_eq!(transferred_amount, self.post_fee + self.initial_pool);
@@ -136,7 +129,7 @@ mod platorm {
             let news = News {
                 author: caller,
                 pool: self.initial_pool,
-                posted_at: current_block,
+                posted_at: current_timestamp,
                 betting_until: current_timestamp + self.betting_time,
                 voting_until: current_timestamp + self.betting_time + self.voting_time,
                 bets_yes_counter: 0,
@@ -166,18 +159,22 @@ mod platorm {
             direction: bool,
             id: u128,
         ) -> u128 {
-            // check if the id exists
-            assert!(self.counter >= id);
             let caller = Self::env().caller();
+            let current_timestamp = Self::env().block_timestamp();
             let mut news = self.news.get(id).unwrap_or_else(|| {
                 // Contracts can also panic - this WILL fail and rollback the
                 // transaction. Caller can still handle it and
                 // recover but there will be no additional information about the error available. 
                 // Use when you know something *unexpected* happened.
                 panic!(
-                    "broken invariant: expected entry to exist for the caller"
+                    "broken invariant: expected entry to exist"
                 )
         });
+        if let Some(value) = self.bettors.get((id, caller)) {
+            panic!("account already bet");
+        }
+        // check if voting is open
+        assert!(news.betting_until < current_timestamp);
         let transferred_amount = self.env().transferred_value();
         assert!(transferred_amount > self.bet_fee);
         self.fees_collected += self.bet_fee;
@@ -207,9 +204,8 @@ mod platorm {
             cast: u8,
             id: u128,
         ) -> u128 {
-            // check if the id exists
-            assert!(self.counter >= id);
             let caller = Self::env().caller();
+            let current_timestamp = Self::env().block_timestamp();
             let mut news = self.news.get(id).unwrap_or_else(|| {
                 // Contracts can also panic - this WILL fail and rollback the
                 // transaction. Caller can still handle it and
@@ -224,13 +220,20 @@ mod platorm {
             } else if cast == 1 {
                 news.votes_no += 1; 
             } else if cast == 2 {
-
+                news.votes_uncertain += 1;
             }
             else {
                 panic!(
                     "illegal cast"
                 )
             }
+            // check if already voted
+            if let Some(value) = self.voters.get((id, caller)) {
+                panic!("account already voted");
+            }
+            // check if voting is open
+            assert!(news.voting_until > current_timestamp);
+            assert!(news.betting_until < current_timestamp);
             let amount_staked = self.cgtoken.staked_balance_of(caller);
             let vote = Vote {
                 amount_staked: amount_staked,
@@ -247,8 +250,6 @@ mod platorm {
             &mut self,
             id: u128,
         ) -> u128 {
-            // check if the id exists
-            assert!(self.counter >= id);
             // check if voting ended
             let caller = Self::env().caller();
             let current_timestamp = Self::env().block_timestamp();
