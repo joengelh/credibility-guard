@@ -7,6 +7,12 @@ edition = "2021"
 [dependencies]
 ink = { version = "4.2.0", default-features = false }
 
+# Note: We **need** to specify the `ink-as-dependency` feature.
+#
+# If we don't we will end up with linking errors!
+cgtoken = { path = "cgtoken", default-features = false, features = ["ink-as-dependency"] }
+
+
 scale = { package = "parity-scale-codec", version = "3", default-features = false, features = ["derive"] }
 scale-info = { version = "2.6", default-features = false, features = ["derive"], optional = true }
 

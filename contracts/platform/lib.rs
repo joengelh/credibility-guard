@@ -170,7 +170,7 @@ mod platorm {
                     "broken invariant: expected entry to exist"
                 )
         });
-        if let Some(value) = self.bettors.get((id, caller)) {
+        if let Some(_value) = self.bettors.get((id, caller)) {
             panic!("account already bet");
         }
         // check if voting is open
@@ -228,7 +228,7 @@ mod platorm {
                 )
             }
             // check if already voted
-            if let Some(value) = self.voters.get((id, caller)) {
+            if let Some(_value) = self.voters.get((id, caller)) {
                 panic!("account already voted");
             }
             // check if voting is open
@@ -253,7 +253,7 @@ mod platorm {
             // check if voting ended
             let caller = Self::env().caller();
             let current_timestamp = Self::env().block_timestamp();
-            let mut news = self.news.get(id).unwrap_or_else(|| {
+            let news = self.news.get(id).unwrap_or_else(|| {
                 // Contracts can also panic - this WILL fail and rollback the
                 // transaction. Caller can still handle it and
                 // recover but there will be no additional information about the error available. 
@@ -262,7 +262,7 @@ mod platorm {
                     "broken invariant: expected entry to exist for the caller"
                 )
             });
-            let mut bettor = self.bettors.get((id, caller)).unwrap_or_else(|| {
+            let bettor = self.bettors.get((id, caller)).unwrap_or_else(|| {
                 // Contracts can also panic - this WILL fail and rollback the
                 // transaction. Caller can still handle it and
                 // recover but there will be no additional information about the error available. 
