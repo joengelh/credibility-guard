@@ -71,7 +71,7 @@ mod platorm {
         bettors: Mapping<(u128, AccountId), Bet>,
         voters: Mapping<(u128, AccountId), Vote>,
         counter: u128,
-        fees_collected: u128,
+        fees_containing: u128,
         initial_pool: u128,
         news: Mapping<u128, News>,
         cgtoken: CgTokenRef,
@@ -108,7 +108,7 @@ mod platorm {
                 counter: 0,
                 bettors: Mapping::default(),
                 voters: Mapping::default(),
-                fees_collected: 0,
+                fees_containing: 0,
                 initial_pool: _inital_pool,
                 news: Mapping::default(),
                 cgtoken: cgtoken,
@@ -124,7 +124,7 @@ mod platorm {
             let current_timestamp = Self::env().block_timestamp();
             let transferred_amount = self.env().transferred_value();
             assert_eq!(transferred_amount, self.post_fee + self.initial_pool);
-            self.fees_collected += self.post_fee;
+            self.fees_containing += self.post_fee;
             self.counter += 1;
             let news = News {
                 author: caller,
@@ -177,7 +177,7 @@ mod platorm {
         assert!(news.betting_until < current_timestamp);
         let transferred_amount = self.env().transferred_value();
         assert!(transferred_amount > self.bet_fee);
-        self.fees_collected += self.bet_fee;
+        self.fees_containing += self.bet_fee;
         let amount = transferred_amount - self.bet_fee;
         let premium = calculate_premium(amount, direction, news.pool, news.bets_yes_promised, news.bets_no_promised);
         if direction {
@@ -324,13 +324,33 @@ mod platorm {
         }
 
         #[ink(message)]
-        pub fn get_all_proposals(&self) -> Vec<News> {
+        pub fn get_counter(&self) -> u128 {
+            return self.counter;
+        }
+
+        #[ink(message)]
+        pub fn get_fees_containing(&self) -> u128 {
+            return self.fees_containing;
+        }
+
+        #[ink(message)]
+        pub fn get_initial_pool(&self) -> u128 {
+            return self.initial_pool;
+        }
+
+        #[ink(message)]
+        pub fn get_all_news(&self) -> Vec<News> {
             let mut news_list = Vec::<News>::default();
             for n in 0..self.counter {
                 let news: News = self.news.get(n).unwrap();
                 news_list.push(news);
             }
             return news_list;
+        }
+
+        #[ink(message)]
+        pub fn get_token(&self) -> CgTokenRef {
+            return self.cgtoken;
         }
 
         #[ink(message)]
