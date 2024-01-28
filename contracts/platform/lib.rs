@@ -90,13 +90,13 @@ mod platorm {
             _voting_treshold: u8,
             _cgtoken_code_hash: Hash,
         ) -> Self {
+            let caller = Self::env().caller();
             let max_supply = 100000000;
             let cgtoken = CgTokenRef::new(max_supply)
                 .code_hash(_cgtoken_code_hash)
                 .endowment(0)
                 .salt_bytes([0xDE, 0xAD, 0xBE, 0xEF])
                 .instantiate();
-            let caller = Self::env().caller();
             Self {
                 version: _version,
                 owner: caller,

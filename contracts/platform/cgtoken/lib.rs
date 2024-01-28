@@ -7,7 +7,6 @@ mod cgtoken {
     use ink::storage::Mapping;
 
     #[ink(storage)]
-    #[derive(Default)]
     pub struct CgToken {
         total_supply: Balance,
         balances: Mapping<AccountId, Balance>,
@@ -49,8 +48,8 @@ mod cgtoken {
             let caller = Self::env().caller();
             balances.insert(caller, &total_supply);
             Self {
-                total_supply,
-                balances,
+                total_supply: total_supply,
+                balances: balances,
                 staked_balances: Mapping::default(),
                 staked_at: Mapping::default(),
             }
