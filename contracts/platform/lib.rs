@@ -350,7 +350,7 @@ mod platorm {
 
         #[ink(message)]
         pub fn get_token(&self) -> CgTokenRef {
-            return self.cgtoken;
+            return self.cgtoken.clone();
         }
 
         #[ink(message)]
