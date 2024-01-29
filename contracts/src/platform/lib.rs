@@ -47,8 +47,6 @@ mod platorm {
         posted_at: Timestamp,
         betting_until: Timestamp,
         voting_until: Timestamp,
-        bets_yes_counter: u128,
-        bets_no_counter: u128,
         bets_yes_promised: u128,
         bets_no_promised: u128,
         votes_yes: u128,
@@ -132,8 +130,6 @@ mod platorm {
                 posted_at: current_timestamp,
                 betting_until: current_timestamp + self.betting_time,
                 voting_until: current_timestamp + self.betting_time + self.voting_time,
-                bets_yes_counter: 0,
-                bets_no_counter: 0,
                 bets_yes_promised: 0,
                 bets_no_promised: 0,
                 votes_yes: 0,
@@ -181,10 +177,8 @@ mod platorm {
         let amount = transferred_amount - self.bet_fee;
         let premium = calculate_premium(amount, direction, news.pool, news.bets_yes_promised, news.bets_no_promised);
         if direction {
-            news.bets_yes_counter += 1;
             news.bets_yes_promised += premium;
         } else {
-            news.bets_no_counter += 1;
             news.bets_no_promised += premium;
         }
         let bet = Bet {

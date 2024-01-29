@@ -1,0 +1,1 @@
+/Users/joengelh/credibility-guard/contracts/src/platform/target/ink/wasm32-unknown-unknown/release/platform.wasm: /Users/joengelh/credibility-guard/contracts/src/platform/cgtoken/lib.rs /Users/joengelh/credibility-guard/contracts/src/platform/lib.rs
