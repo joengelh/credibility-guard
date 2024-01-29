@@ -232,7 +232,6 @@ mod platorm {
             return amount_staked;
         }
 
-
         #[ink(message)]
         pub fn claim(
             &mut self,
@@ -275,6 +274,19 @@ mod platorm {
                 return bettor.amount_promised;
             }
         }
+
+        #[ink(message)]
+        pub fn fee_payout(
+            &mut self,
+            id: u128,
+        ) -> u128 {
+            assert!(self.fees_containing > 0);
+            fees_containing = self.fees_containing;
+            self.env().transfer(self.owner, fees_containing);
+            self.fees_containing = 0;
+            return fees_containing;
+        }
+
 
         #[ink(message)]
         pub fn get_version(&self) -> u8 {
