@@ -44,6 +44,8 @@ mod platorm {
     pub struct News {
         author: AccountId,
         pool: u128,
+        initial_pool: u128,
+        claimed: bool,
         posted_at: Timestamp,
         betting_until: Timestamp,
         voting_until: Timestamp,
@@ -122,6 +124,8 @@ mod platorm {
             let news = News {
                 author: caller,
                 pool: self.initial_pool,
+                initial_pool: self.initial_pool,
+                claimed: false,
                 posted_at: current_timestamp,
                 betting_until: current_timestamp + self.betting_time,
                 voting_until: current_timestamp + self.betting_time + self.voting_time,
@@ -261,30 +265,68 @@ mod platorm {
             assert_eq!(bettor.claimed, false);
             assert!(news.voting_until < current_timestamp);
             if news.votes_uncertain > news.votes_yes && news.votes_uncertain > news.votes_no {
-                self.env().transfer(caller, bettor.amount_payed);
+                let _result = self.env().transfer(caller, bettor.amount_payed);
                 return bettor.amount_promised;
             } else if news.votes_yes > news.votes_no && bettor.direction == true {
-                self.env().transfer(caller, bettor.amount_payed);
+                let _result = self.env().transfer(caller, bettor.amount_payed);
                 return bettor.amount_promised;
             } else if news.votes_yes < news.votes_no && bettor.direction == false {
-                self.env().transfer(caller, bettor.amount_payed);
+                let _result = self.env().transfer(caller, bettor.amount_payed);
                 return bettor.amount_promised;
+            } else if news.votes_yes > news.votes_no && bettor.direction == false {
+                return 0;
+            } else if news.votes_yes < news.votes_no && bettor.direction == true {
+                return 0;
             } else {
-                self.env().transfer(caller, bettor.amount_payed);
+                let _result = self.env().transfer(caller, bettor.amount_payed);
                 return bettor.amount_promised;
             }
         }
 
         #[ink(message)]
-        pub fn fee_payout(
+        pub fn pool_claim(
             &mut self,
             id: u128,
         ) -> u128 {
+            let caller = Self::env().caller();
+            let current_timestamp = Self::env().block_timestamp();
+            let mut news = self.news.get(id).unwrap_or_else(|| {
+                // Contracts can also panic - this WILL fail and rollback the
+                // transaction. Caller can still handle it and
+                // recover but there will be no additional information about the error available. 
+                // Use when you know something *unexpected* happened.
+                panic!(
+                    "broken invariant: expected entry to exist for the caller"
+                )
+            });
+            assert_eq!(news.author, caller);
+            assert!(current_timestamp > news.voting_until);
+            assert_eq!(news.claimed, false);
+            let mut _payout = 0;
+            if news.votes_uncertain > news.votes_yes && news.votes_uncertain > news.votes_no {
+                _payout = news.initial_pool;
+            } else if news.votes_yes > news.votes_no {
+                _payout = news.pool - news.bets_yes_promised;
+            } else if news.votes_yes < news.votes_no {
+                _payout = news.pool - news.bets_no_promised;
+            } else {
+                _payout = news.initial_pool;
+            }
+            news.claimed = true;
+            self.news.insert(id, &news);
+            let _result = self.env().transfer(caller, _payout);
+            return _payout;
+        }
+
+        #[ink(message)]
+        pub fn fee_payout(
+            &mut self,
+        ) -> u128 {
             assert!(self.fees_containing > 0);
-            fees_containing = self.fees_containing;
-            self.env().transfer(self.owner, fees_containing);
+            let _fees_containing = self.fees_containing;
+            let _result = self.env().transfer(self.owner, _fees_containing);
             self.fees_containing = 0;
-            return fees_containing;
+            return _fees_containing;
         }
 
 
@@ -409,13 +451,13 @@ mod platorm {
     ) -> u128 {
         let bet_weight = amount / pool;
         let adjusted_weight = percent_of_value(bet_weight, 95);
-        let mut offered_premium = 0;
+        let mut _offered_premium = 0;
         if choice {
-            offered_premium = ((pool - bets_yes_promised) * adjusted_weight) + amount;
+            _offered_premium = ((pool - bets_yes_promised) * adjusted_weight) + amount;
         } else {
-            offered_premium = ((pool - bets_no_promised) * adjusted_weight) + amount;
+            _offered_premium = ((pool - bets_no_promised) * adjusted_weight) + amount;
         }
-        return offered_premium;
+        return _offered_premium;
     }
 
     // This function calculates a percentage of a value

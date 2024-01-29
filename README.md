@@ -1,16 +1,27 @@
 # credibility-guard
 
-Repository for the Aleph Zero Crtl Hackathon - Credibility Guard
+## Why credibility guard?
 
-## Todo
+Credibility Guard, our decentralized app on Aleph Zero, tackles the fake news dilemma by engaging users in a dynamic truth-seeking process. Users upload suspicious news, initiating a prediction market where bettors stake on its authenticity. Voters, economically incentivized to uphold truth, stake platform tokens. The news uploader pays fees, profiting as more users engage.
 
-- create governance token and implement it
-- decide how the platform keeps track and repays voters
-- implement tracking and repaying
+Bettors enjoy market-adjusted rates and payouts based on collective predictions, creating a system where accuracy is financially rewarded. Credibility Guard transforms users into guardians of credibility, fostering a transparent information landscape and incentivizing active participation in the fight against misinformation.
+
+## Game Theory
+
+Credibility Guard leverages game theory to create a powerful weapon against fake news. In this decentralized app on Aleph Zero, users engage in a strategic dance of prediction and validation.
+
+The game begins with individuals submitting news they suspect to be fake, triggering a prediction market. Bettors, armed with market-adjusted rates, strategically place their stakes on the news' authenticity. Simultaneously, voters, economically incentivized by staking platform tokens, cast their ballots, each move impacting the token's value.
+
+The uploader, entering the game by paying initial liquidity and a small fee, stands to profit as more users engage. This dynamic creates a compelling interplay of incentives, where honesty is not just encouraged but economically enforced.
+
+Bettors, skilled in forecasting the future, reap rewards based on collective predictions. The game unfolds as participants actively contribute to a more truthful digital landscape, earning profits by aligning with reality.
+
+Credibility Guard, driven by game theory, transforms the fight against fake news into a strategic and rewarding endeavor, where every move contributes to a more trustworthy information ecosystem.
 
 ## Deployments on Testnet
 
-- Token; Address: 5HmWheXkh97NZJvGpcJUTNnRM7DoDc3pvyzjQpiuZbMPvkNr
+- Token {"address": "", "hash": ""}
+- Platform {"address": "", "hash": ""}
 
 ## Install
 
@@ -23,31 +34,3 @@ smart contracts from their respective repos:
 ```bash
 cargo +nightly contract build --release
 ```
-
-## Project Overview:
-
-[Unleashing DeFi Against Fake News](https://taikai.network/alephzero/hackathons/CTRL-Hack-ZK/projects/clrgwejuu026rvn01l61mow2y/idea)
-
-Welcome to Credibility Guard, a groundbreaking project leveraging the power of DeFi and cutting-edge privacy tools from Aleph Zero to combat the spread of misinformation. Our platform empowers users to contribute to a collective effort in determining the authenticity of news while ensuring privacy and security.
-
-Key Features:
-
-    Privacy-Preserving Entry: Users can submit potential fake news securely and privately using Aleph Zero's advanced privacy tooling, maintaining confidentiality while contributing to the truth-seeking mission.
-    Decentralized Prediction Market: Participants can stake their belief in the news' authenticity by pledging money through smart contracts on our decentralized platform. This creates a financial incentive for users to engage in accurate information verification.
-    Stake-Based Verification: After a predefined period (e.g., 60 days), guardians vote on whether news if fake or not based on how many $CRDY Tokens they have staked. Game theory makes it highly likely the guardians do not cheat, as that would destroy the platform and destroy the value of the staked tokens as well, since a fee is collected and payed to them.
-    Anonymous Voting: Voting on the authenticity of news is conducted anonymously, encouraging unbiased opinions and discouraging any potential manipulation. Privacy is a cornerstone of our platform.
-    Early Indication: Leveraging the concept of efficient markets, our platform provides an early indication of the news' truthfulness as soon as six hours after submission. This dynamic feature enhances the speed and accuracy of our truth-detection mechanism.
-
-Let's make a positive impact on the information landscape!
-
-# Game Theory
-
-At the heart of our game theory model is the incentive structure for those who upload content. Individuals motivated to share what they believe to be fake news can do so, fueled by the prospect of earning a small fee for every vote received on their proposal. This financial reward provides an inherent motivation for uploaders to contribute content that is perceived as deceptive or misleading.
-
-On the other end, participants who cast their votes are financially motivated as well. By accurately assessing the validity of uploaded news, voters stand to increase their earnings. Their incentive lies in supporting the information that ultimately proves to be correct, as this aligns with the platform's goal of identifying fake news accurately.
-
-The crucial component in this ecosystem is the token holders. These individuals hold the power to determine the accuracy of news after a 60-day period. Their financial stake is at risk, as their tokens' value is tied to the platform's overall health and accuracy. If token holders provide false information, it could lead to a decline in platform usage, diminishing the value of their tokens. This dual motivation – maintaining the platform's credibility and safeguarding their financial interests – ensures that token holders will truthfully verify the accuracy of the news.
-
-In the event that a conclusive determination cannot be made, the platform adopts a fail-safe mechanism. Funds are returned to participants, emphasizing the commitment to fairness and accuracy in the face of uncertainty.
-
-If the platform was wrong the platform looses reputation. the money left over goes to the person who asked the question.

@@ -1,6 +1,6 @@
 {
   "source": {
-    "hash": "0x8c9deebcbe031195419d51108445d8200badd44ea78bb40425aa2d2ba4813262",
+    "hash": "0xa9222efca8c3aba0a5b6e12ffcef6651b0f58c9f0353666d1f50a49df33e25e5",
     "language": "ink! 4.3.0",
     "compiler": "rustc 1.77.0-nightly",
     "build_info": {
@@ -76,15 +76,6 @@
                 "u128"
               ],
               "type": 3
-            }
-          },
-          {
-            "label": "_voting_treshold",
-            "type": {
-              "displayName": [
-                "u8"
-              ],
-              "type": 0
             }
           },
           {
@@ -285,6 +276,48 @@
         "selector": "0xb388803f"
       },
       {
+        "args": [
+          {
+            "label": "id",
+            "type": {
+              "displayName": [
+                "u128"
+              ],
+              "type": 3
+            }
+          }
+        ],
+        "default": false,
+        "docs": [],
+        "label": "pool_claim",
+        "mutates": true,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 10
+        },
+        "selector": "0x38477e91"
+      },
+      {
+        "args": [],
+        "default": false,
+        "docs": [],
+        "label": "fee_payout",
+        "mutates": true,
+        "payable": false,
+        "returnType": {
+          "displayName": [
+            "ink",
+            "MessageResult"
+          ],
+          "type": 10
+        },
+        "selector": "0x9fbb4310"
+      },
+      {
         "args": [],
         "default": false,
         "docs": [],
@@ -379,22 +412,6 @@
           "type": 13
         },
         "selector": "0x3b76d759"
-      },
-      {
-        "args": [],
-        "default": false,
-        "docs": [],
-        "label": "get_voting_treshold",
-        "mutates": false,
-        "payable": false,
-        "returnType": {
-          "displayName": [
-            "ink",
-            "MessageResult"
-          ],
-          "type": 11
-        },
-        "selector": "0x63909234"
       },
       {
         "args": [],
@@ -605,32 +622,6 @@
           "type": 13
         },
         "selector": "0x11406833"
-      },
-      {
-        "args": [
-          {
-            "label": "voting_treshold",
-            "type": {
-              "displayName": [
-                "u8"
-              ],
-              "type": 0
-            }
-          }
-        ],
-        "default": false,
-        "docs": [],
-        "label": "set_voting_treshold",
-        "mutates": true,
-        "payable": false,
-        "returnType": {
-          "displayName": [
-            "ink",
-            "MessageResult"
-          ],
-          "type": 11
-        },
-        "selector": "0xeecc2333"
       }
     ]
   },
@@ -692,15 +683,6 @@
                 }
               },
               "name": "voting_time"
-            },
-            {
-              "layout": {
-                "leaf": {
-                  "key": "0x00000000",
-                  "ty": 0
-                }
-              },
-              "name": "voting_treshold"
             },
             {
               "layout": {
@@ -841,6 +823,24 @@
                           "layout": {
                             "leaf": {
                               "key": "0x557ca5dd",
+                              "ty": 3
+                            }
+                          },
+                          "name": "initial_pool"
+                        },
+                        {
+                          "layout": {
+                            "leaf": {
+                              "key": "0x557ca5dd",
+                              "ty": 5
+                            }
+                          },
+                          "name": "claimed"
+                        },
+                        {
+                          "layout": {
+                            "leaf": {
+                              "key": "0x557ca5dd",
                               "ty": 4
                             }
                           },
@@ -908,15 +908,6 @@
                             }
                           },
                           "name": "votes_no"
-                        },
-                        {
-                          "layout": {
-                            "leaf": {
-                              "key": "0x557ca5dd",
-                              "ty": 0
-                            }
-                          },
-                          "name": "voting_treshold"
                         },
                         {
                           "layout": {
@@ -1362,6 +1353,16 @@
                 "typeName": "u128"
               },
               {
+                "name": "initial_pool",
+                "type": 3,
+                "typeName": "u128"
+              },
+              {
+                "name": "claimed",
+                "type": 5,
+                "typeName": "bool"
+              },
+              {
                 "name": "posted_at",
                 "type": 4,
                 "typeName": "Timestamp"
@@ -1400,11 +1401,6 @@
                 "name": "votes_no",
                 "type": 3,
                 "typeName": "u128"
-              },
-              {
-                "name": "voting_treshold",
-                "type": 0,
-                "typeName": "u8"
               },
               {
                 "name": "metadata",
