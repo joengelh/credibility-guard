@@ -52,8 +52,6 @@ mod platorm {
         votes_yes: u128,
         votes_uncertain: u128,
         votes_no: u128,
-        // voting threshold to determine the truth in decimal, so 0.5 means that 50% of voters have to agree
-        voting_treshold: u8,
         metadata: Hash,
     }
 
@@ -65,7 +63,6 @@ mod platorm {
         bet_fee: u128,
         betting_time: u64,
         voting_time: u64,
-        voting_treshold: u8,
         bettors: Mapping<(u128, AccountId), Bet>,
         voters: Mapping<(u128, AccountId), Vote>,
         counter: u128,
@@ -85,7 +82,6 @@ mod platorm {
             _betting_time: u64,
             _voting_time: u64,
             _inital_pool: u128,
-            _voting_treshold: u8,
             _cgtoken_code_hash: Hash,
         ) -> Self {
             let caller = Self::env().caller();
@@ -102,7 +98,6 @@ mod platorm {
                 bet_fee: _bet_fee,
                 betting_time: _betting_time,
                 voting_time: _voting_time,
-                voting_treshold: _voting_treshold,
                 counter: 0,
                 bettors: Mapping::default(),
                 voters: Mapping::default(),
@@ -135,7 +130,6 @@ mod platorm {
                 votes_yes: 0,
                 votes_uncertain: 0,
                 votes_no: 0,
-                voting_treshold: self.voting_treshold,
                 metadata: _metadata,
             };
             self.news.insert(self.counter, &news);
@@ -313,11 +307,6 @@ mod platorm {
         }
 
         #[ink(message)]
-        pub fn get_voting_treshold(&self) -> u8 {
-            return self.voting_treshold;
-        }
-
-        #[ink(message)]
         pub fn get_counter(&self) -> u128 {
             return self.counter;
         }
@@ -395,16 +384,6 @@ mod platorm {
             assert_eq!(self.owner, Self::env().caller());
             self.voting_time = voting_time;
             return self.voting_time;
-        }
-
-        #[ink(message)]
-        pub fn set_voting_treshold(
-            &mut self,
-            voting_treshold: u8,
-        ) -> u8 {
-            assert_eq!(self.owner, Self::env().caller());
-            self.voting_treshold = voting_treshold;
-            return self.voting_treshold;
         }
     }
 
