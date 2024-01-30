@@ -461,14 +461,8 @@ mod platorm {
     }
 
     // This function calculates a percentage of a value
-    fn percent_of_value(value: u128, percent: u128) -> u128 {
-        // Convert u128 to f64 for the calculation
-        let value_as_f64 = value as f64;
-
-        // Calculate the reduced value
-        let reduced_value = (value_as_f64 * percent as f64 / 100.0) as u128;
-
-        // Return the reduced value
+    fn percent_of_value(original_value: u128, reduction_percentage: u128) -> u128 {+
+        let reduced_value = original_value * reduction_percentage / 100 + 1;
         reduced_value
     }
 }
