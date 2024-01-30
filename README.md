@@ -20,8 +20,19 @@ Credibility Guard, driven by game theory, transforms the fight against fake news
 
 ## Deployments on Testnet
 
-- Token {"address": "", "hash": ""}
-- Platform {"address": "", "hash": ""}
+- Token
+  {
+  "address": "",
+  "contractHash": "0x4e85c1063e00a5678c87b353c56944b205e6a1084d4b92d54cd40b1a793cb9ef",
+  "codeHash": "0xe3f612e6b055f851100edc2a2426fe5b36ee8600d5a8e89c53848657e4fa847a",
+  }
+- Platform
+  {
+  "address": "",
+  "contractHash": "0x2048b56deb1baa7b74db7170c8d97e239963df3f993e95613053a5d9f1ea325b",
+  "codeHash": "0xadbdfa686aefc020d6816fe7d08be55ed89c9b6689f59eb3aee0d8471e551ad4",
+  "deploymentSalt": "0x5f80a658f3b7568e60ca5d3a96463f1ace623cacebe62396004f55d960a7a0ae",
+  }
 
 ## Install
 
